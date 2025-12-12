@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/loading_widget.dart';
 import '../../providers/client_provider.dart';
+import '../../data/models/client_model.dart';
 
 class ClientsListScreen extends StatefulWidget {
   const ClientsListScreen({super.key});
@@ -137,13 +138,15 @@ class _ClientsListScreenState extends State<ClientsListScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.visibility, color: AppColors.info),
+                          icon: const Icon(Icons.visibility,
+                              color: AppColors.info),
                           onPressed: () {
                             _showClientDetails(context, client);
                           },
                         ),
                         IconButton(
-                          icon: const Icon(Icons.delete, color: AppColors.error),
+                          icon:
+                              const Icon(Icons.delete, color: AppColors.error),
                           onPressed: () async {
                             final confirm = await showDialog<bool>(
                               context: context,
@@ -154,11 +157,13 @@ class _ClientsListScreenState extends State<ClientsListScreen> {
                                 ),
                                 actions: [
                                   TextButton(
-                                    onPressed: () => Navigator.pop(context, false),
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
                                     child: const Text('Cancelar'),
                                   ),
                                   TextButton(
-                                    onPressed: () => Navigator.pop(context, true),
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
                                     child: const Text('Excluir'),
                                   ),
                                 ],
@@ -166,7 +171,8 @@ class _ClientsListScreenState extends State<ClientsListScreen> {
                             );
 
                             if (confirm == true && context.mounted) {
-                              final success = await provider.deleteClient(client.id);
+                              final success =
+                                  await provider.deleteClient(client.id);
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
@@ -175,8 +181,9 @@ class _ClientsListScreenState extends State<ClientsListScreen> {
                                           ? 'Cliente excluído com sucesso'
                                           : 'Erro ao excluir cliente',
                                     ),
-                                    backgroundColor:
-                                        success ? AppColors.success : AppColors.error,
+                                    backgroundColor: success
+                                        ? AppColors.success
+                                        : AppColors.error,
                                   ),
                                 );
                               }
@@ -194,14 +201,177 @@ class _ClientsListScreenState extends State<ClientsListScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Criar novo cliente')),
-          );
-        },
+        onPressed: () => _showCreateClientDialog(context),
         child: const Icon(Icons.add),
       ),
     );
+  }
+
+  Future<void> _showCreateClientDialog(BuildContext context) async {
+    final _formKey = GlobalKey<FormState>();
+    final emailCtrl = TextEditingController();
+    final passCtrl = TextEditingController();
+    final nameCtrl = TextEditingController();
+    final enterpriseCtrl = TextEditingController();
+    final celCtrl = TextEditingController();
+    final addressCtrl = TextEditingController();
+    final roleIdCtrl = TextEditingController(text: '1');
+    final orcamentoIdCtrl = TextEditingController(text: '1');
+    final categoryIdCtrl = TextEditingController(text: '1');
+    bool isSubmitting = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Criar cliente'),
+          content: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: emailCtrl,
+                    decoration: const InputDecoration(labelText: 'Email'),
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (v) =>
+                        (v == null || v.isEmpty) ? 'Informe o email' : null,
+                  ),
+                  TextFormField(
+                    controller: passCtrl,
+                    decoration: const InputDecoration(labelText: 'Senha'),
+                    obscureText: true,
+                    validator: (v) =>
+                        (v == null || v.isEmpty) ? 'Informe a senha' : null,
+                  ),
+                  TextFormField(
+                    controller: nameCtrl,
+                    decoration: const InputDecoration(
+                        labelText: 'Nome completo (opcional)'),
+                  ),
+                  TextFormField(
+                    controller: enterpriseCtrl,
+                    decoration:
+                        const InputDecoration(labelText: 'Empresa (opcional)'),
+                  ),
+                  TextFormField(
+                    controller: celCtrl,
+                    decoration:
+                        const InputDecoration(labelText: 'Telefone (opcional)'),
+                    keyboardType: TextInputType.phone,
+                  ),
+                  TextFormField(
+                    controller: addressCtrl,
+                    decoration:
+                        const InputDecoration(labelText: 'Endereço (opcional)'),
+                  ),
+                  TextFormField(
+                    controller: roleIdCtrl,
+                    decoration: const InputDecoration(labelText: 'Role ID'),
+                    keyboardType: TextInputType.number,
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Informe o role id';
+                      if (int.tryParse(v) == null) return 'Role id inválido';
+                      return null;
+                    },
+                  ),
+                  TextFormField(
+                    controller: orcamentoIdCtrl,
+                    decoration:
+                        const InputDecoration(labelText: 'Orçamento ID'),
+                    keyboardType: TextInputType.number,
+                    validator: (v) {
+                      if (v == null || v.isEmpty)
+                        return 'Informe o orçamento id';
+                      if (int.tryParse(v) == null) return 'Id inválido';
+                      return null;
+                    },
+                  ),
+                  TextFormField(
+                    controller: categoryIdCtrl,
+                    decoration:
+                        const InputDecoration(labelText: 'Categoria ID'),
+                    keyboardType: TextInputType.number,
+                    validator: (v) {
+                      if (v == null || v.isEmpty)
+                        return 'Informe a categoria id';
+                      if (int.tryParse(v) == null) return 'Id inválido';
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancelar')),
+            TextButton(
+              onPressed: isSubmitting
+                  ? null
+                  : () async {
+                      if (!_formKey.currentState!.validate()) return;
+                      setState(() => isSubmitting = true);
+
+                      final client = ClientCreateModel(
+                        email: emailCtrl.text.trim().toLowerCase(),
+                        password: passCtrl.text,
+                        fullName:
+                            nameCtrl.text.isEmpty ? null : nameCtrl.text.trim(),
+                        enterpriseName: enterpriseCtrl.text.isEmpty
+                            ? null
+                            : enterpriseCtrl.text.trim(),
+                        celNumber:
+                            celCtrl.text.isEmpty ? null : celCtrl.text.trim(),
+                        adress: addressCtrl.text.isEmpty
+                            ? null
+                            : addressCtrl.text.trim(),
+                        profileImageUrl: null,
+                        profileImageBase64: null,
+                        roleId: int.parse(roleIdCtrl.text),
+                        orcamentoId: int.parse(orcamentoIdCtrl.text),
+                        categoryId: int.parse(categoryIdCtrl.text),
+                      );
+
+                      final success = await context
+                          .read<ClientProvider>()
+                          .createClient(client);
+
+                      setState(() => isSubmitting = false);
+                      if (!mounted) return;
+                      Navigator.pop(context);
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(success
+                              ? 'Cliente criado'
+                              : 'Erro ao criar cliente'),
+                        ),
+                      );
+                    },
+              child: isSubmitting
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Text('Criar'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    emailCtrl.dispose();
+    passCtrl.dispose();
+    nameCtrl.dispose();
+    enterpriseCtrl.dispose();
+    celCtrl.dispose();
+    addressCtrl.dispose();
+    roleIdCtrl.dispose();
+    orcamentoIdCtrl.dispose();
+    categoryIdCtrl.dispose();
   }
 
   void _showClientDetails(BuildContext context, client) {

@@ -30,12 +30,17 @@ class ApiService {
       InterceptorsWrapper(
         onRequest: (options, handler) async {
           try {
-            final token = await _storage.getToken();
-            if (token != null && token.isNotEmpty) {
-              options.headers['Authorization'] = 'Bearer $token';
-            } else {
-              // garante que header Authorization não exista quando token for nulo/vazio
+            // Não adicionar Authorization para rota de login
+            if (options.path == ApiConstants.login) {
               options.headers.remove('Authorization');
+            } else {
+              final token = await _storage.getToken();
+              if (token != null && token.isNotEmpty) {
+                options.headers['Authorization'] = 'Bearer $token';
+              } else {
+                // garante que header Authorization não exista quando token for nulo/vazio
+                options.headers.remove('Authorization');
+              }
             }
 
             // Remove quaisquer headers com valor nulo para evitar envio de Null
@@ -44,6 +49,12 @@ class ApiService {
             _logger.w('Falha ao recuperar token para headers: $e');
             _logger.v(st);
           }
+
+          // DEBUG: log completo do request (headers e body) para diagnosticar 422
+          try {
+            _logger.d('REQUEST HEADERS => ${options.headers}');
+            _logger.d('REQUEST DATA => ${options.data}');
+          } catch (_) {}
 
           _logger.d('REQUEST[${options.method}] => PATH: ${options.path}');
           return handler.next(options);
@@ -182,7 +193,8 @@ class ApiService {
       case DioExceptionType.badResponse:
         // Tenta extrair mensagem do corpo de resposta quando disponível
         final resp = error.response;
-        final serverMessage = resp?.data != null ? ' | body: ${resp!.data}' : '';
+        final serverMessage =
+            resp?.data != null ? ' | body: ${resp!.data}' : '';
         errorMessage = '${_handleStatusCode(resp?.statusCode)}$serverMessage';
         break;
       case DioExceptionType.cancel:
