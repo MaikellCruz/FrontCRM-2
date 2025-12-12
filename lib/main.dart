@@ -27,9 +27,9 @@ Future<void> _initializeServices() async {
     final storageService = StorageService();
     await storageService.init();
 
-    // Initialize API Service
-    final apiService = ApiService();
-    apiService.init();
+  // Initialize API Service
+  final apiService = ApiService();
+  await apiService.init();
 
     print('✅ Services initialized successfully');
   } catch (e) {

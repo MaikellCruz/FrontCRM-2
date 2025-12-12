@@ -138,7 +138,8 @@ class ClientCreateModel {
       'full_name': fullName,
       'enterprise_name': enterpriseName,
       'cel_number': celNumber,
-      'adress': adress,
+      // backend expects 'address' (fix typo 'adress' -> 'address')
+      'address': adress,
       'profile_image_url': profileImageUrl,
       'profile_image_base64': profileImageBase64,
       'role_id': roleId,

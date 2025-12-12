@@ -12,7 +12,7 @@ class ApiService {
   final Logger _logger = Logger();
   final StorageService _storage = StorageService();
 
-  void init() {
+  Future<void> init() async {
     _dio = Dio(
       BaseOptions(
         baseUrl: ApiConstants.baseUrl,
@@ -29,10 +29,22 @@ class ApiService {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final token = await _storage.getToken();
-          if (token != null && token.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $token';
+          try {
+            final token = await _storage.getToken();
+            if (token != null && token.isNotEmpty) {
+              options.headers['Authorization'] = 'Bearer $token';
+            } else {
+              // garante que header Authorization não exista quando token for nulo/vazio
+              options.headers.remove('Authorization');
+            }
+
+            // Remove quaisquer headers com valor nulo para evitar envio de Null
+            options.headers.removeWhere((key, value) => value == null);
+          } catch (e, st) {
+            _logger.w('Falha ao recuperar token para headers: $e');
+            _logger.v(st);
           }
+
           _logger.d('REQUEST[${options.method}] => PATH: ${options.path}');
           return handler.next(options);
         },
@@ -78,12 +90,21 @@ class ApiService {
     Options? options,
   }) async {
     try {
-      final response = await _dio.post(
-        path,
-        data: data,
-        queryParameters: queryParameters,
-        options: options,
-      );
+      final Response response;
+      if (data == null) {
+        response = await _dio.post(
+          path,
+          queryParameters: queryParameters,
+          options: options,
+        );
+      } else {
+        response = await _dio.post(
+          path,
+          data: data,
+          queryParameters: queryParameters,
+          options: options,
+        );
+      }
       return response;
     } on DioException catch (e) {
       throw _handleError(e);
@@ -98,12 +119,21 @@ class ApiService {
     Options? options,
   }) async {
     try {
-      final response = await _dio.put(
-        path,
-        data: data,
-        queryParameters: queryParameters,
-        options: options,
-      );
+      final Response response;
+      if (data == null) {
+        response = await _dio.put(
+          path,
+          queryParameters: queryParameters,
+          options: options,
+        );
+      } else {
+        response = await _dio.put(
+          path,
+          data: data,
+          queryParameters: queryParameters,
+          options: options,
+        );
+      }
       return response;
     } on DioException catch (e) {
       throw _handleError(e);
@@ -118,12 +148,21 @@ class ApiService {
     Options? options,
   }) async {
     try {
-      final response = await _dio.delete(
-        path,
-        data: data,
-        queryParameters: queryParameters,
-        options: options,
-      );
+      final Response response;
+      if (data == null) {
+        response = await _dio.delete(
+          path,
+          queryParameters: queryParameters,
+          options: options,
+        );
+      } else {
+        response = await _dio.delete(
+          path,
+          data: data,
+          queryParameters: queryParameters,
+          options: options,
+        );
+      }
       return response;
     } on DioException catch (e) {
       throw _handleError(e);
@@ -141,7 +180,10 @@ class ApiService {
         errorMessage = 'Tempo de conexão esgotado';
         break;
       case DioExceptionType.badResponse:
-        errorMessage = _handleStatusCode(error.response?.statusCode);
+        // Tenta extrair mensagem do corpo de resposta quando disponível
+        final resp = error.response;
+        final serverMessage = resp?.data != null ? ' | body: ${resp!.data}' : '';
+        errorMessage = '${_handleStatusCode(resp?.statusCode)}$serverMessage';
         break;
       case DioExceptionType.cancel:
         errorMessage = 'Requisição cancelada';

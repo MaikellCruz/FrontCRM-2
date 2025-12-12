@@ -25,7 +25,8 @@ class CategoryModel extends Equatable {
       id: json['id'] as int,
       nome: json['nome'] as String,
       tipo: json['tipo'] as String,
-      descricao: json['descrição'] as String,
+      // aceita 'descricao' sem acento ou 'descrição' com acento (servidores diferentes)
+      descricao: (json['descricao'] ?? json['descrição'] ?? json['descr'] ) as String,
       role: RoleModel.fromJson(json['role'] as Map<String, dynamic>),
       orcamentoId: json['orcamento_id'] as int,
       clientId: json['client_id'] as int,
@@ -37,7 +38,8 @@ class CategoryModel extends Equatable {
       'id': id,
       'nome': nome,
       'tipo': tipo,
-      'descrição': descricao,
+      // envia sem acento para maior compatibilidade
+      'descricao': descricao,
       'role': role.toJson(),
       'orcamento_id': orcamentoId,
       'client_id': clientId,
@@ -97,7 +99,7 @@ class CategoryCreateModel {
     return {
       'nome': nome,
       'tipo': tipo,
-      'descrição': descricao,
+      'descricao': descricao,
       'role_id': roleId,
       'orcamento_id': orcamentoId,
       'client_id': clientId,
